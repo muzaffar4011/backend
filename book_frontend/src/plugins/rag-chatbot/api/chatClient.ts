@@ -4,7 +4,7 @@
  */
 
 const API_BASE_URL = process.env.NODE_ENV === 'production'
-  ? 'https://rag-chatbot-api-lr57.onrender.com'
+  ? 'https://chatbot-rag-krlg.onrender.com'
   : 'http://localhost:8000';
 
 export interface ChatQueryRequest {
@@ -46,7 +46,8 @@ class ChatClient {
   private baseUrl: string;
 
   constructor(baseUrl: string = API_BASE_URL) {
-    this.baseUrl = baseUrl;
+    // Remove trailing slash if present to avoid double slashes in URLs
+    this.baseUrl = baseUrl.replace(/\/+$/, '');
   }
 
   /**
