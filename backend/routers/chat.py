@@ -44,6 +44,7 @@ async def chat(
         500: Internal server error
     """
     try:
+        
         # 1. Create or get session
         if query.session_id:
             session = database_service.get_session(db, query.session_id)
