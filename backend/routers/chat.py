@@ -44,7 +44,7 @@ async def chat(
         500: Internal server error
     """
     try:
-        
+
         # 1. Create or get session
         if query.session_id:
             session = database_service.get_session(db, query.session_id)
@@ -54,13 +54,21 @@ async def chat(
             session = database_service.create_session(db)
 
         logger.info(f"Processing query for session: {session.session_id}")
+        logger.info(f"Query text: {query.query_text[:100]}... (truncated)")
+        logger.info(f"Mode: {query.mode}")
 
         # 2. Generate answer using RAG
-        result = await rag_service.generate_answer(
-            query_text=query.query_text,
-            mode=query.mode,
-            selected_text=query.selected_text
-        )
+        try:
+            logger.info("Starting RAG answer generation...")
+            result = await rag_service.generate_answer(
+                query_text=query.query_text,
+                mode=query.mode,
+                selected_text=query.selected_text
+            )
+            logger.info(f"RAG answer generated successfully. Response length: {len(result.get('response_text', ''))}")
+        except Exception as rag_error:
+            logger.error(f"RAG service error: {rag_error}", exc_info=True)
+            raise
 
         # 3. Save query to database
         user_query = database_service.create_query(
@@ -126,8 +134,12 @@ async def chat(
 
     except Exception as e:
         # Internal server errors
-        logger.error(f"Error processing chat query: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        logger.error(f"Error processing chat query: {type(e).__name__}: {e}", exc_info=True)
+        # Return error with CORS headers intact
+        raise HTTPException(
+            status_code=500,
+            detail=f"Internal server error: {str(e)[:200]}"  # Truncate long errors
+        )
 
 
 @router.post("/chat/selection", response_model=ChatResponse)
